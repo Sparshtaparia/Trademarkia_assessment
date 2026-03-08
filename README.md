@@ -2,8 +2,11 @@
 
 A production-ready semantic search system combining Pinecone vector database, Gaussian Mixture Model clustering, and intelligent semantic caching.
 
-<img width="1919" height="962" alt="Screenshot 2026-03-09 012905" src="https://github.com/user-attachments/assets/f2360d7e-c15e-4bef-bbba-fbe26d7c0e81" />
+### Before getting cached:
 <img width="1919" height="954" alt="Screenshot 2026-03-09 012809" src="https://github.com/user-attachments/assets/ebd08239-7f8d-44fd-a2d5-bc31da51cc9a" />
+
+### After getting cached(searched ateast once before searching again):
+<img width="1919" height="962" alt="Screenshot 2026-03-09 012905" src="https://github.com/user-attachments/assets/f2360d7e-c15e-4bef-bbba-fbe26d7c0e81" />
 
 
 ## Architecture Overview
