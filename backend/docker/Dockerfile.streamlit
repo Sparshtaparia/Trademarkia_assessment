@@ -1,0 +1,54 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY backend/ backend/
+COPY scripts/ scripts/
+COPY gmm_model.pkl .  # May not exist yet, but that's ok
+COPY pyproject.toml .
+
+# Create .streamlit directory and config
+RUN mkdir -p /app/.streamlit && \
+    mkdir -p /app/data
+
+# Streamlit configuration
+RUN echo "[server]" > /app/.streamlit/config.toml && \
+    echo "port = 8501" >> /app/.streamlit/config.toml && \
+    echo "headless = true" >> /app/.streamlit/config.toml && \
+    echo "enableCORS = false" >> /app/.streamlit/config.toml && \
+    echo "enableXsrfProtection = true" >> /app/.streamlit/config.toml && \
+    echo "address = \"0.0.0.0\"" >> /app/.streamlit/config.toml && \
+    echo "" >> /app/.streamlit/config.toml && \
+    echo "[client]" >> /app/.streamlit/config.toml && \
+    echo "showErrorDetails = true" >> /app/.streamlit/config.toml && \
+    echo "" >> /app/.streamlit/config.toml && \
+    echo "[theme]" >> /app/.streamlit/config.toml && \
+    echo "primaryColor = \"#667eea\"" >> /app/.streamlit/config.toml && \
+    echo "backgroundColor = \"#ffffff\"" >> /app/.streamlit/config.toml && \
+    echo "secondaryBackgroundColor = \"#f0f2f6\"" >> /app/.streamlit/config.toml
+
+# Environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8501/_stcore/health || exit 1
+
+# Expose Streamlit port
+EXPOSE 8501
+
+# Run Streamlit
+CMD ["streamlit", "run", "backend/streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+

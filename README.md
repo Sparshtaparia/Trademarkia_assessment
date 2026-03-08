@@ -9,30 +9,30 @@ A production-ready semantic search system combining Pinecone vector database, Ga
 
 ### Components
 
-1. **Embeddings Layer** (`src/embeddings.py`)
+1. **Embeddings Layer** (`backend/ml/embeddings.py`)
    - Uses Sentence Transformers (all-MiniLM-L6-v2)
    - 384-dimensional embeddings for fast and efficient search
    - Cosine similarity matching
 
-2. **Clustering Layer** (`src/clustering.py`)
+2. **Clustering Layer** (`backend/ml/clustering.py`)
    - Gaussian Mixture Model (GMM) with 20 components
    - Soft clustering with probabilistic assignments
    - Automatic PCA reduction for high-dimensional data
    - Cluster interpretation via keywords
 
-3. **Semantic Cache** (`src/semantic_cache.py`)
+3. **Semantic Cache** (`backend/ml/semantic_cache.py`)
    - Cluster-aware caching mechanism
    - Dictionary-based storage with cluster partitioning
    - Configurable similarity threshold (default: 0.85)
    - Hit/miss statistics tracking
 
-4. **Vector Database** (`src/pinecone_client.py`)
+4. **Vector Database** (`backend/ml/vector_db.py`)
    - Cloud-based Pinecone integration
    - Serverless deployment on AWS
    - Fast approximate nearest neighbor search
    - Automatic index creation and management
 
-5. **API Service** (`src/app.py`)
+5. **API Service** (`backend/main.py`)
    - FastAPI-based REST API
    - Query endpoint with cache tracking
    - Statistics and monitoring endpoints
@@ -89,14 +89,14 @@ This will:
 
 5. Start the API server (in one terminal)
 ```bash
-python -m uvicorn src.app:app --reload
+python -m uvicorn backend.main:app --reload
 ```
 
 Server will be available at `http://localhost:8000`
 
 6. Start the Streamlit frontend (in another terminal)
 ```bash
-streamlit run streamlit_app.py
+streamlit run frontend/streamlit_app.py
 ```
 
 The web interface will open at `http://localhost:8501`
@@ -112,13 +112,13 @@ curl http://localhost:8000/health
 ### GET `/status`
 System status and component information
 ```bash
-curl http://localhost:8000/status
+curl http://localhost:8000/api/status
 ```
 
 ### POST `/query`
 Execute semantic search with caching
 ```bash
-curl -X POST http://localhost:8000/query \
+curl -X POST http://localhost:8000/api/query \
   -H "Content-Type: application/json" \
   -d '{
     "text": "machine learning algorithms",
@@ -137,7 +137,7 @@ Response includes:
 ### GET `/cache/stats`
 Cache performance statistics
 ```bash
-curl http://localhost:8000/cache/stats
+curl http://localhost:8000/api/cache/stats
 ```
 
 Response includes:
@@ -150,7 +150,7 @@ Response includes:
 ### DELETE `/cache`
 Clear all cached entries
 ```bash
-curl -X DELETE http://localhost:8000/cache
+curl -X DELETE http://localhost:8000/api/cache
 ```
 
 ## Docker Deployment
@@ -200,7 +200,7 @@ The system includes a modern web interface built with Streamlit for interactive 
 ### Running the Web Interface
 
 ```bash
-streamlit run streamlit_app.py
+streamlit run frontend/streamlit_app.py
 ```
 
 Then navigate to `http://localhost:8501` in your browser.
@@ -275,7 +275,7 @@ In code:
 
 ### Cache Performance
 ```bash
-curl http://localhost:8000/cache/stats | jq
+curl http://localhost:8000/api/cache/stats | jq
 ```
 
 ### Query Execution with Caching
@@ -306,7 +306,7 @@ Timeout waiting for index creation
 Solution: Check Pinecone dashboard for index status. Serverless indexes take ~1-2 minutes to create.
 
 ### Memory Issues with Large Datasets
-- Reduce `n_samples` in `load_data.py`
+- Reduce `n_samples` in `scripts/load_data.py`
 - Increase `batch_size` in embedding generation
 - Use PCA dimensionality reduction
 
@@ -330,6 +330,3 @@ Full interactive API documentation available at:
 
 MIT License
 
-## Support
-
-For issues or questions, open an issue in the repository.

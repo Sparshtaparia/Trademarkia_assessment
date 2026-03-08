@@ -1,36 +1,44 @@
-"""Test script to verify imports work"""
+#!/usr/bin/env python
+"""Test script to verify imports work correctly"""
 import sys
-sys.path.insert(0, 'c:/Users/spars/Desktop/New folder')
+import os
 
-from src.embeddings import EmbeddingManager
-from src.clustering import GMMClusterer
-from src.semantic_cache import SemanticCache
-from src.pinecone_client import PineconeVectorDB
-from src.data_pipeline import DataPipeline
-
-print('All imports OK')
-
-# Try to initialize components
-try:
-    print('Testing EmbeddingManager...')
-    embedding_manager = EmbeddingManager()
-    print('EmbeddingManager OK')
-except Exception as e:
-    print(f'EmbeddingManager error: {e}')
+# Add project root to path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 try:
-    print('Testing GMMClusterer...')
-    gmm_clusterer = GMMClusterer(n_components=20)
-    print('GMMClusterer OK')
+    print("Testing imports...")
+    
+    # Test backend services
+    from backend.services.embeddings import EmbeddingManager
+    print("✓ backend.services.embeddings")
+    
+    from backend.services.clustering import GMMClusterer
+    print("✓ backend.services.clustering")
+    
+    from backend.services.semantic_cache import SemanticCache
+    print("✓ backend.services.semantic_cache")
+    
+    from backend.services.vector_db import PineconeVectorDB
+    print("✓ backend.services.vector_db")
+    
+    from backend.pipeline.data_pipeline import DataPipeline
+    print("✓ backend.pipeline.data_pipeline")
+    
+    from backend.api.schemas import QueryRequest, QueryResponse
+    print("✓ backend.api.schemas")
+    
+    from backend.api.routes import router
+    print("✓ backend.api.routes")
+    
+    from backend.main import app
+    print("✓ backend.main")
+    
+    print("\n✅ All imports successful!")
+    
 except Exception as e:
-    print(f'GMMClusterer error: {e}')
-
-try:
-    print('Testing SemanticCache...')
-    semantic_cache = SemanticCache(similarity_threshold=0.85)
-    print('SemanticCache OK')
-except Exception as e:
-    print(f'SemanticCache error: {e}')
-
-print('Done!')
+    print(f"\n❌ Import error: {e}")
+    import traceback
+    traceback.print_exc()
+    sys.exit(1)
 

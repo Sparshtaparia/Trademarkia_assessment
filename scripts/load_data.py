@@ -7,10 +7,10 @@ import os
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.data_pipeline import DataPipeline
-from src.embeddings import EmbeddingManager
-from src.clustering import GMMClusterer
-from src.pinecone_client import PineconeVectorDB
+from backend.pipeline.data_pipeline import DataPipeline
+from backend.ml.embeddings import EmbeddingManager
+from backend.ml.clustering import GMMClusterer
+from backend.ml.vector_db import PineconeVectorDB
 import numpy as np
 from dotenv import load_dotenv
 

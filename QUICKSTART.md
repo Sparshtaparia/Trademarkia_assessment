@@ -27,14 +27,14 @@ This downloads the 20 Newsgroups dataset, generates embeddings, and indexes them
 ### Step 4: Start API Server
 Open a terminal and run:
 ```bash
-python -m uvicorn src.app:app --reload
+python -m uvicorn backend.main:app --reload
 ```
 ✓ API running at `http://localhost:8000`
 
 ### Step 5: Start Web Interface
 Open a new terminal and run:
 ```bash
-streamlit run streamlit_app.py
+streamlit run frontend/streamlit_app.py
 ```
 ✓ Web UI running at `http://localhost:8501`
 
@@ -65,7 +65,7 @@ docker-compose up
 
 ### Search Query
 ```bash
-curl -X POST http://localhost:8000/query \
+curl -X POST http://localhost:8000/api/query \
   -H "Content-Type: application/json" \
   -d '{
     "text": "machine learning",
@@ -76,7 +76,7 @@ curl -X POST http://localhost:8000/query \
 
 ### Cache Statistics
 ```bash
-curl http://localhost:8000/cache/stats | jq
+curl http://localhost:8000/api/cache/stats | jq
 ```
 
 ### Health Check
@@ -119,7 +119,7 @@ ValueError: PINECONE_API_KEY not provided
 ```
 requests.exceptions.ConnectionError: Cannot reach API
 ```
-**Fix:** Ensure API server is running with `python -m uvicorn src.app:app --reload`
+**Fix:** Ensure API server is running with `python -m uvicorn backend.main:app --reload`
 
 ### Streamlit Can't Find API
 ```
@@ -147,8 +147,8 @@ Timeout waiting for index creation
 
 3. **Customize**
    - Edit `.env` to adjust cache threshold, cluster count, etc.
-   - Modify `src/embeddings.py` to use different models
-   - Update `src/clustering.py` for different clustering algorithms
+   - Modify `backend/ml/embeddings.py` to use different models
+   - Update `backend/ml/clustering.py` for different clustering algorithms
 
 ## API Documentation
 
@@ -171,8 +171,3 @@ See `.env.example` for all available configuration options:
 - Use PCA dimensionality reduction for large datasets
 - Enable Streamlit caching in config for faster UI loads
 
-## Support
-
-- Check README.md for detailed documentation
-- See TROUBLESHOOTING section in README for common issues
-- Open an issue on GitHub for bugs or feature requests

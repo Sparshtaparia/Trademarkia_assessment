@@ -6,6 +6,7 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Streamlit Web Interface                       │
 │            (Search, Analytics, Insights, History)                │
+│                    frontend/streamlit_app.py                     │
 └────────────────────────────┬────────────────────────────────────┘
                              │
                          HTTP/REST
@@ -13,12 +14,14 @@
 ┌────────────────────────────▼────────────────────────────────────┐
 │                    FastAPI REST Server                           │
 │                    (Port 8000)                                   │
+│                    backend/main.py                               │
 ├─────────────────────────────────────────────────────────────────┤
-│ POST /query          - Execute semantic search with caching     │
-│ GET  /cache/stats    - Cache performance metrics                │
-│ DELETE /cache        - Clear cache                              │
-│ GET  /status         - System status                            │
-│ GET  /health         - Health check                             │
+│ POST /api/query          - Execute semantic search with caching  │
+│ GET  /api/cache/stats    - Cache performance metrics             │
+│ DELETE /api/cache        - Clear cache                          │
+│ GET  /api/status         - System status                         │
+│ GET  /api/health         - Health check                          │
+│ GET  /health             - Health check (root)                   │
 └────────────────────────────┬────────────────────────────────────┘
                              │
         ┌────────────────────┼────────────────────┐
@@ -27,6 +30,8 @@
 ┌──────────────┐  ┌────────────────────┐  ┌────────────────────┐
 │  Embeddings  │  │    Clustering      │  │ Semantic Cache     │
 │  (SentTrans) │  │   (GMM + PCA)      │  │ (Dict-based)       │
+│  backend/ml/ │  │  backend/ml/       │  │  backend/ml/       │
+│ embeddings.py│  │  clustering.py    │  │ semantic_cache.py │
 └──────────────┘  └────────────────────┘  └────────────────────┘
         │                    │                    │
         └────────────────────┼────────────────────┘
@@ -34,6 +39,8 @@
                     ┌────────▼────────┐
                     │  Pinecone Index │
                     │  (Vector DB)    │
+                    │  backend/ml/    │
+                    │  vector_db.py   │
                     └─────────────────┘
 ```
 
@@ -102,7 +109,7 @@ User Query (via Streamlit)
 
 ## Component Details
 
-### 1. Embedding Layer (src/embeddings.py)
+### 1. Embedding Layer (backend/ml/embeddings.py)
 
 **Purpose**: Convert text to fixed-size vectors
 
@@ -120,7 +127,7 @@ EmbeddingManager
 └── get_dimension() -> int
 ```
 
-### 2. Clustering Layer (src/clustering.py)
+### 2. Clustering Layer (backend/ml/clustering.py)
 
 **Purpose**: Group similar documents probabilistically
 
@@ -146,7 +153,7 @@ GMMClusterer
 - Efficient inference with PCA preprocessing
 - Interpretable cluster keywords via TF-IDF
 
-### 3. Semantic Cache (src/semantic_cache.py)
+### 3. Semantic Cache (backend/ml/semantic_cache.py)
 
 **Purpose**: Cache frequent query results based on semantic similarity
 
@@ -176,7 +183,7 @@ class CacheEntry:
     hit_count: int
 ```
 
-### 4. Vector Database (src/pinecone_client.py)
+### 4. Vector Database (backend/ml/vector_db.py)
 
 **Purpose**: Fast approximate nearest neighbor search at scale
 
@@ -197,7 +204,7 @@ PineconeClient
 └── get_index_stats() -> IndexStats
 ```
 
-### 5. FastAPI Service (src/app.py)
+### 5. FastAPI Service (backend/main.py)
 
 **Purpose**: REST API for query execution and monitoring
 
@@ -206,10 +213,10 @@ PineconeClient
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
 | GET | `/health` | Health check |
-| GET | `/status` | System status |
-| POST | `/query` | Execute search with caching |
-| GET | `/cache/stats` | Cache metrics |
-| DELETE | `/cache` | Clear cache |
+| GET | `/api/status` | System status |
+| POST | `/api/query` | Execute search with caching |
+| GET | `/api/cache/stats` | Cache metrics |
+| DELETE | `/api/cache` | Clear cache |
 
 **Request/Response Models**:
 ```python
@@ -228,7 +235,7 @@ class QueryResponse:
     execution_time_ms: float
 ```
 
-### 6. Streamlit Frontend (streamlit_app.py)
+### 6. Streamlit Frontend (frontend/streamlit_app.py)
 
 **Purpose**: Interactive web UI for the semantic search system
 
@@ -332,8 +339,8 @@ class QueryResponse:
 
 ### 1. Local Development
 ```bash
-python -m uvicorn src.app:app --reload
-streamlit run streamlit_app.py
+python -m uvicorn backend.main:app --reload
+streamlit run frontend/streamlit_app.py
 ```
 
 ### 2. Docker Container
@@ -365,8 +372,8 @@ PINECONE_INDEX_NAME=semantic-search # Index name
 ```
 
 Tunable parameters in code:
-- Embedding model: `src/embeddings.py`
-- PCA dimensions: `src/clustering.py`
+- Embedding model: `backend/ml/embeddings.py`
+- PCA dimensions: `backend/ml/clustering.py`
 - Top-k results: FastAPI endpoint
 - Batch size: `scripts/load_data.py`
 
@@ -378,13 +385,14 @@ Tunable parameters in code:
 - Data loading: `scripts/load_data.py` output
 
 ### Metrics
-- Cache hit rate: `/cache/stats` endpoint
+- Cache hit rate: `/api/cache/stats` endpoint
 - Query latency: Response execution_time_ms
 - Cluster distribution: Cache stats endpoint
 - Index stats: Pinecone dashboard
 
 ### Debugging
 1. **API Health**: `curl http://localhost:8000/health`
-2. **Cache Stats**: `curl http://localhost:8000/cache/stats | jq`
+2. **Cache Stats**: `curl http://localhost:8000/api/cache/stats | jq`
 3. **Query Details**: Check Streamlit UI for cache/similarity info
 4. **Pinecone**: Verify index status in Pinecone console
+

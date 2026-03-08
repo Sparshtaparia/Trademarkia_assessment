@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # FastAPI Backend
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: semantic-search-api
+    ports:
+      - "8000:8000"
+    environment:
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
+    volumes:
+      - ../data:/app/data
+      - ../gmm_model.pkl:/app/gmm_model.pkl
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - semantic-search
+
+  # Streamlit Frontend
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.streamlit
+    container_name: semantic-search-frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
+    volumes:
+      - ../gmm_model.pkl:/app/gmm_model.pkl
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - semantic-search
+
+  # Data Ingestion Service (run once)
+  ingest:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: semantic-search-ingest
+    environment:
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
+    volumes:
+      - ../data:/app/data
+      - ${DATASET_PATH:-../data/20_newsgroups}:/data/20_newsgroups:ro
+      - ../gmm_model.pkl:/app/gmm_model.pkl
+    command: >
+      sh -c "python scripts/ingest_data.py"
+    restart: "no"
+    networks:
+      - semantic-search
+
+networks:
+  semantic-search:
+    driver: bridge
+
