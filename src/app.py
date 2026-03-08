@@ -160,17 +160,27 @@ async def query_search(request: QueryRequest):
         
         # If cache miss, query Pinecone
         if not cache_hit:
-            results = pinecone_db.query(query_embedding, top_k=request.top_k)
+            results = pinecone_db.query(query_embedding, top_k=request.top_k, include_metadata=True)
             
-            # Format results
-            formatted_results = [
-                {
+            # Format results - extract cluster_id from metadata to top level
+            formatted_results = []
+            for match in results:
+                metadata = match.get("metadata", {})
+                # Extract content from metadata (stored during ingestion)
+                content = metadata.get("content", "")
+                # If no content in metadata, use first 500 chars of raw text if available
+                if not content and "text" in metadata:
+                    content = metadata.get("text", "")[:500]
+                
+                formatted_results.append({
                     "id": match["id"],
                     "score": match["score"],
-                    "metadata": match.get("metadata", {})
-                }
-                for match in results
-            ]
+                    "title": f"Document {match['id']}",
+                    "content": content,
+                    "cluster_id": metadata.get("cluster_id", -1),
+                    "cluster_prob": metadata.get("cluster_prob", 0.0),
+                    "metadata": metadata
+                })
             
             # Cache the result
             if request.use_cache:

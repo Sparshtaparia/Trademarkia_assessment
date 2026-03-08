@@ -178,7 +178,7 @@ with tab1:
                             """, unsafe_allow_html=True)
                     
                     with col2:
-                        similarity = result.get("max_similarity_score", 0)
+                        similarity = result.get("similarity_score", 0)
                         st.metric("Similarity Score", f"{similarity:.3f}", delta=f"{similarity*100:.1f}%")
                     
                     with col3:
@@ -194,10 +194,16 @@ with tab1:
                     for idx, item in enumerate(result.get("results", []), 1):
                         with st.expander(f"#{idx} - {item.get('title', 'Document')[:60]}...", expanded=idx<=2):
                             st.markdown(f"**Score:** {item.get('score', 0):.4f}")
-                            st.markdown(f"**Cluster:** {item.get('cluster_id', 'N/A')}")
+                            cluster_id = item.get('cluster_id', -1)
+                            cluster_display = "N/A" if cluster_id == -1 else cluster_id
+                            st.markdown(f"**Cluster:** {cluster_display}")
+                            # Show content - prefer full content from item, fallback to metadata
+                            content = item.get('content', '')
+                            if not content and 'metadata' in item:
+                                content = item.get('metadata', {}).get('text', '')[:500]
                             st.text_area(
                                 "Content",
-                                value=item.get('content', '')[:500] + "...",
+                                value=content[:500] + "..." if len(content) > 500 else content,
                                 disabled=True,
                                 height=150,
                                 label_visibility="collapsed",
@@ -375,7 +381,7 @@ with tab4:
                 with col2:
                     result = item["result"]
                     st.metric("Cache Hit", "✓ Yes" if result.get("cache_hit") else "✗ No")
-                    st.metric("Score", f"{result.get('max_similarity_score', 0):.3f}")
+                    st.metric("Score", f"{result.get('similarity_score', 0):.3f}")
                     st.metric("Results", len(result.get("results", [])))
                 
                 st.caption(f"Executed at: {item['timestamp']}")

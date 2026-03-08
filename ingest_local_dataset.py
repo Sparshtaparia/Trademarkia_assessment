@@ -61,11 +61,22 @@ metrics = clusterer.fit(embeddings)
 cluster_labels = clusterer.predict(embeddings)
 cluster_probs = clusterer.predict_proba(embeddings)
 
-print(f"GMM Clustering complete - BIC: {metrics['bic']:.2f}, Converged: {metrics['converged']}")
+print("GMM Clustering complete - BIC: {:.2f}, Converged: {}".format(metrics['bic'], metrics['converged']))
 
 # Save the trained GMM model for later use
 model_path = clusterer.save("gmm_model.pkl")
-print(f"GMM model saved to {model_path}")
+print("GMM model saved to {}".format(model_path))
+
+# Print summary
+print("\n" + "="*60)
+print("INGESTION SUMMARY")
+print("="*60)
+print(f"Total documents processed: {len(texts)}")
+print(f"Embedding dimension: {embedder.embedding_dim}")
+print(f"Number of clusters: {n_clusters}")
+print(f"GMM model saved to: gmm_model.pkl")
+print(f"Pinecone index: semantic-search")
+print("="*60)
 
 # Connect to Pinecone
 db = PineconeVectorDB(index_name="semantic-search")
@@ -75,10 +86,13 @@ db.create_index(dimension=embedder.embedding_dim)
 records = []
 for i, vec in enumerate(embeddings):
     # Include cluster_id and cluster_probs in metadata
+    # Truncate text for metadata (Pinecone has size limits)
+    text_sample = texts[i][:1000] if len(texts[i]) > 1000 else texts[i]
     metadata = {
         "cluster_id": int(cluster_labels[i]),
         "cluster_prob": float(np.max(cluster_probs[i])),
-        "category": ids[i].split("_")[0] if "_" in ids[i] else "unknown"
+        "category": ids[i].split("_")[0] if "_" in ids[i] else "unknown",
+        "text": text_sample
     }
     records.append((ids[i], vec, metadata))
 
