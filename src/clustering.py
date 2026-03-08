@@ -47,7 +47,7 @@ class GMMClusterer:
         else:
             embeddings_reduced = embeddings
         
-        # Fit GMM
+        # Fit GMM       
         self.gmm = GaussianMixture(
             n_components=self.n_components,
             random_state=self.random_state,
@@ -75,7 +75,10 @@ class GMMClusterer:
             Probability matrix (N, n_components)
         """
         if self.gmm is None:
-            raise ValueError("GMM must be fitted first")
+            # Return uniform probability distribution (safe fallback)
+            print("[Clustering] WARNING: GMM not fitted, returning uniform probabilities")
+            n_samples = embeddings.shape[0]
+            return np.ones((n_samples, self.n_components)) / self.n_components
         
         if self.pca is not None:
             embeddings_reduced = self.pca.transform(embeddings)
@@ -95,7 +98,9 @@ class GMMClusterer:
             Cluster labels (N,)
         """
         if self.gmm is None:
-            raise ValueError("GMM must be fitted first")
+            # Return -1 for all samples (safe fallback)
+            print("[Clustering] WARNING: GMM not fitted, returning -1 labels")
+            return np.full(embeddings.shape[0], -1, dtype=int)
         
         if self.pca is not None:
             embeddings_reduced = self.pca.transform(embeddings)
@@ -114,6 +119,11 @@ class GMMClusterer:
         Returns:
             Tuple of (cluster_id, confidence)
         """
+        if self.gmm is None:
+            # Return -1 cluster with 0 confidence (safe fallback)
+            print("[Clustering] WARNING: GMM not fitted, returning cluster -1 with 0.0 confidence")
+            return -1, 0.0
+        
         proba = self.predict_proba(embedding.reshape(1, -1))[0]
         cluster_id = int(np.argmax(proba))
         confidence = float(proba[cluster_id])

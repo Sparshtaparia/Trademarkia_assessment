@@ -118,7 +118,8 @@ with tab1:
             "Enter your search query",
             placeholder="e.g., machine learning, deep neural networks, artificial intelligence...",
             height=100,
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            key="search_query_input"
         )
     
     with col2:
@@ -195,11 +196,12 @@ with tab1:
                             st.markdown(f"**Score:** {item.get('score', 0):.4f}")
                             st.markdown(f"**Cluster:** {item.get('cluster_id', 'N/A')}")
                             st.text_area(
-                                f"Content",
+                                "Content",
                                 value=item.get('content', '')[:500] + "...",
                                 disabled=True,
                                 height=150,
-                                label_visibility="collapsed"
+                                label_visibility="collapsed",
+                                key=f"result_content_{idx}"
                             )
                 else:
                     st.error(f"API Error: {response.status_code}")
@@ -337,8 +339,10 @@ with tab3:
         "3": ["natural", "language", "processing", "nlp", "text"]
     }
     
+    cols = st.columns(4)
+    
     for idx, (cluster_id, keywords) in enumerate(clusters_keywords.items()):
-        with st.columns(4)[idx]:
+        with cols[idx]:
             st.markdown(f"**Cluster {cluster_id}**")
             for kw in keywords:
                 st.caption(f"• {kw}")
@@ -364,7 +368,8 @@ with tab4:
                         value=item["query"],
                         disabled=True,
                         height=80,
-                        label_visibility="collapsed"
+                        label_visibility="collapsed",
+                        key=f"history_query_{idx}"
                     )
                 
                 with col2:

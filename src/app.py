@@ -208,6 +208,70 @@ async def clear_cache():
     return {"message": "Cache cleared"}
 
 
+@app.post("/clustering/train")
+async def train_clustering():
+    """
+    Train GMM clustering model from Pinecone vectors
+    
+    This endpoint fetches vectors from Pinecone and trains the GMM model.
+    """
+    if not is_initialized:
+        raise HTTPException(status_code=503, detail="System not initialized")
+    
+    if pinecone_db is None:
+        raise HTTPException(status_code=503, detail="Pinecone not initialized")
+    
+    try:
+        # Get vector IDs from Pinecone
+        print("[API] Fetching vector IDs from Pinecone...")
+        vector_ids = pinecone_db.get_all_vector_ids(limit=10000)
+        
+        if not vector_ids:
+            raise HTTPException(status_code=400, detail="No vectors found in Pinecone index")
+        
+        print(f"[API] Found {len(vector_ids)} vectors in Pinecone")
+        
+        # Fetch vectors
+        vectors_dict = pinecone_db.fetch_vectors(vector_ids)
+        
+        if not vectors_dict:
+            raise HTTPException(status_code=400, detail="Could not fetch vectors from Pinecone")
+        
+        # Convert to numpy array
+        embeddings = np.array(list(vectors_dict.values()))
+        print(f"[API] Training GMM on {embeddings.shape[0]} embeddings with dimension {embeddings.shape[1]}")
+        
+        # Train GMM
+        metrics = gmm_clusterer.fit(embeddings)
+        
+        return {
+            "message": "GMM trained successfully",
+            "n_vectors": len(vectors_dict),
+            "n_clusters": gmm_clusterer.n_components,
+            "metrics": metrics
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Training error: {str(e)}")
+
+
+@app.get("/clustering/status")
+async def get_clustering_status():
+    """Get clustering model status"""
+    if not is_initialized or gmm_clusterer is None:
+        raise HTTPException(status_code=503, detail="System not initialized")
+    
+    is_trained = gmm_clusterer.gmm is not None
+    
+    return {
+        "is_trained": is_trained,
+        "n_components": gmm_clusterer.n_components,
+        "n_features": gmm_clusterer.n_features
+    }
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""

@@ -108,6 +108,73 @@ class PineconeVectorDB:
         
         return results.get("matches", [])
     
+    def fetch_vectors(self, ids: List[str]) -> Dict[str, np.ndarray]:
+        """
+        Fetch vectors by their IDs
+        
+        Args:
+            ids: List of vector IDs to fetch
+            
+        Returns:
+            Dictionary mapping id to embedding vector
+        """
+        if self.index is None:
+            raise ValueError("Index not initialized. Call create_index() first.")
+        
+        if not ids:
+            return {}
+        
+        # Fetch vectors from Pinecone
+        fetch_response = self.index.fetch(ids=ids)
+        
+        vectors = {}
+        for vector_id, vector_data in fetch_response.get("vectors", {}).items():
+            vectors[vector_id] = np.array(vector_data.get("values", []))
+        
+        print(f"[Pinecone] Fetched {len(vectors)} vectors")
+        return vectors
+    
+    def get_all_vector_ids(self, limit: int = 10000) -> List[str]:
+        """
+        Get all vector IDs from the index (up to limit)
+        
+        Args:
+            limit: Maximum number of IDs to return
+            
+        Returns:
+            List of vector IDs
+        """
+        if self.index is None:
+            raise ValueError("Index not initialized. Call create_index() first.")
+        
+        # Get index stats to see total vectors
+        stats = self.index.describe_index_stats()
+        total_vectors = stats.get("total_vector_count", 0)
+        
+        # Query with high top_k to get many IDs (Pinecone doesn't have direct list method)
+        # We'll use a query with empty vector to get approximate IDs
+        # For accurate listing, you'd need to track IDs separately
+        all_ids = []
+        
+        # Use query to get IDs - this is approximate
+        # For exact listing, consider maintaining a separate ID tracking
+        sample_query = np.zeros(self.index.describe_index_stats().get("dimension", 384))
+        
+        # Fetch in batches using query
+        for i in range(0, min(total_vectors, limit), 1000):
+            results = self.index.query(
+                vector=sample_query.tolist(),
+                top_k=min(1000, total_vectors - i),
+                include_metadata=False
+            )
+            batch_ids = [match["id"] for match in results.get("matches", [])]
+            all_ids.extend(batch_ids)
+        
+        # Remove duplicates
+        unique_ids = list(set(all_ids))
+        print(f"[Pinecone] Retrieved {len(unique_ids)} unique vector IDs")
+        return unique_ids[:limit]
+    
     def delete_index(self) -> None:
         """Delete the index"""
         if self.index_name:
