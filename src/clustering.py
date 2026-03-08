@@ -6,6 +6,8 @@ from sklearn.mixture import GaussianMixture
 from sklearn.decomposition import PCA
 from typing import Tuple, List, Dict
 import json
+import joblib
+import os
 
 
 class GMMClusterer:
@@ -63,6 +65,60 @@ class GMMClusterer:
         }
         print(f"[Clustering] Fitted GMM - BIC: {metrics['bic']:.2f}, Converged: {metrics['converged']}")
         return metrics
+    
+    def save(self, filepath: str = "gmm_model.pkl") -> str:
+        """
+        Save the trained model to disk
+        
+        Args:
+            filepath: Path to save the model
+            
+        Returns:
+            Path where model was saved
+        """
+        if self.gmm is None:
+            print("[Clustering] WARNING: No trained model to save")
+            return ""
+        
+        model_data = {
+            "gmm": self.gmm,
+            "pca": self.pca,
+            "n_components": self.n_components,
+            "random_state": self.random_state,
+            "n_features": self.n_features
+        }
+        
+        joblib.dump(model_data, filepath)
+        print(f"[Clustering] Model saved to {filepath}")
+        return filepath
+    
+    def load(self, filepath: str = "gmm_model.pkl") -> bool:
+        """
+        Load a trained model from disk
+        
+        Args:
+            filepath: Path to the saved model
+            
+        Returns:
+            True if loaded successfully, False otherwise
+        """
+        if not os.path.exists(filepath):
+            print(f"[Clustering] Model file not found: {filepath}")
+            return False
+        
+        try:
+            model_data = joblib.load(filepath)
+            self.gmm = model_data["gmm"]
+            self.pca = model_data["pca"]
+            self.n_components = model_data["n_components"]
+            self.random_state = model_data["random_state"]
+            self.n_features = model_data["n_features"]
+            print(f"[Clustering] Model loaded from {filepath}")
+            print(f"[Clustering] Loaded model with {self.n_components} components, {self.n_features} features")
+            return True
+        except Exception as e:
+            print(f"[Clustering] Error loading model: {e}")
+            return False
     
     def predict_proba(self, embeddings: np.ndarray) -> np.ndarray:
         """

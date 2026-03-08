@@ -54,12 +54,12 @@ class PineconeVectorDB:
         self.index = self.pc.Index(self.index_name)
         print(f"[Pinecone] Connected to index '{self.index_name}'")
     
-    def upsert_vectors(self, vectors: List[Tuple[str, np.ndarray]], batch_size: int = 100) -> int:
+    def upsert_vectors(self, vectors: List[Tuple[str, np.ndarray, Dict]], batch_size: int = 100) -> int:
         """
         Upsert vectors to Pinecone
         
         Args:
-            vectors: List of (id, embedding) tuples
+            vectors: List of (id, embedding, metadata) tuples
             batch_size: Batch size for upserting
             
         Returns:
@@ -69,10 +69,15 @@ class PineconeVectorDB:
             raise ValueError("Index not initialized. Call create_index() first.")
         
         # Convert to format expected by Pinecone
-        vectors_to_upsert = [
-            (str(i), embedding.tolist(), {})
-            for i, embedding in vectors
-        ]
+        # Handle both tuples with metadata (id, embedding, metadata) and without (id, embedding)
+        vectors_to_upsert = []
+        for v in vectors:
+            if len(v) == 3:
+                vec_id, embedding, metadata = v
+                vectors_to_upsert.append((str(vec_id), embedding.tolist(), metadata))
+            else:
+                vec_id, embedding = v
+                vectors_to_upsert.append((str(vec_id), embedding.tolist(), {}))
         
         upserted_count = 0
         for i in range(0, len(vectors_to_upsert), batch_size):

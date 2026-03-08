@@ -80,9 +80,18 @@ async def startup_event():
         gmm_clusterer = GMMClusterer(n_components=20)
         semantic_cache = SemanticCache(similarity_threshold=0.85)
         
+        # Try to load saved model if exists
+        model_path = "gmm_model.pkl"
+        if os.path.exists(model_path):
+            try:
+                gmm_clusterer.load(model_path)
+                print("[App] Loaded saved clustering model")
+            except Exception as e:
+                print(f"[App] Could not load saved model: {e}")
+        
         # Only initialize Pinecone if API key is available
         if pinecone_api_key:
-            pinecone_db = PineconeVectorDB()
+            pinecone_db = PineconeVectorDB(index_name="semantic-search")
             pinecone_db.create_index(dimension=embedding_manager.embedding_dim)
             print("[App] Pinecone initialized")
         else:
@@ -244,11 +253,15 @@ async def train_clustering():
         # Train GMM
         metrics = gmm_clusterer.fit(embeddings)
         
+        # Save the trained model
+        model_path = gmm_clusterer.save("gmm_model.pkl")
+        
         return {
             "message": "GMM trained successfully",
             "n_vectors": len(vectors_dict),
             "n_clusters": gmm_clusterer.n_components,
-            "metrics": metrics
+            "metrics": metrics,
+            "model_saved": model_path
         }
     
     except HTTPException:
