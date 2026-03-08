@@ -10,6 +10,35 @@ A production-ready semantic search system combining Pinecone vector database, Ga
 <img width="1919" height="962" alt="Screenshot 2026-03-09 012905" src="https://github.com/user-attachments/assets/f2360d7e-c15e-4bef-bbba-fbe26d7c0e81" />
 
 
+## Project Structure
+
+```
+semantic-search-system/
+├── backend/                 # FastAPI backend
+│   ├── main.py            # Application entry point
+│   ├── api/               # API routes and schemas
+│   ├── ml/                # ML components
+│   │   ├── embeddings.py
+│   │   ├── clustering.py
+│   │   ├── semantic_cache.py
+│   │   └── vector_db.py
+│   └── pipeline/          # Data processing pipeline
+├── frontend/              # Streamlit frontend
+│   ├── streamlit_app.py  # Main Streamlit application
+│   └── .streamlit/       # Streamlit configuration
+│       └── config.toml
+├── docker/               # Docker configurations
+│   ├── docker-compose.yml
+│   ├── Dockerfile        # Backend API image
+│   └── Dockerfile.streamlit  # Frontend Streamlit image
+├── scripts/              # Utility scripts
+│   ├── load_data.py
+│   └── ingest_data.py
+├── requirements.txt
+└── pyproject.toml
+```
+
+
 ## Architecture Overview
 
 ### Components
@@ -160,9 +189,27 @@ curl -X DELETE http://localhost:8000/api/cache
 
 ## Docker Deployment
 
+### Using Docker Compose (Recommended)
+
+```bash
+cd docker
+docker-compose up --build
+```
+
+This will start:
+- API service on port 8000
+- Streamlit frontend on port 8501
+
+### Manual Docker Build
+
 Build the Docker image:
 ```bash
-docker build -t semantic-search:latest .
+docker build -t semantic-search:latest -f docker/Dockerfile .
+```
+
+Build the Streamlit frontend:
+```bash
+docker build -t semantic-search-streamlit:latest -f docker/Dockerfile.streamlit .
 ```
 
 Run the container:
