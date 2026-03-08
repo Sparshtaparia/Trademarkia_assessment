@@ -1,0 +1,22 @@
+[project]
+name = "semantic-search-system"
+version = "0.1.0"
+description = "Semantic search system with Pinecone, GMM clustering, and semantic caching"
+requires-python = ">=3.10"
+
+dependencies = [
+    "sentence-transformers>=2.2.2",
+    "pinecone-client>=3.0.0",
+    "scikit-learn>=1.3.0",
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.0.0",
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "jupyter>=1.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
